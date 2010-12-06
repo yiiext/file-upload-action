@@ -34,7 +34,7 @@ public function actions()
 			// the filename. If not set will be copied original filename.
 			'filename'=null,
 			// whether terminate application after file will save. It often need for ajax request.
-			'exitOnAjax'=>false,
+			'exitAfterSave'=>false,
 		),
 		// ...
 	);

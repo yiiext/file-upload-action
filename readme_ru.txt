@@ -36,7 +36,7 @@ public function actions()
 			'filename'=null,
 			// указывает нужно ли завершить выполнение скрипта после сохранения файла
 			// часто необходим при AJAX-загрузке файлов
-			'exitOnAjax'=>false,
+			'exitAfterSave'=>false,
 		),
 		// ...
 	);

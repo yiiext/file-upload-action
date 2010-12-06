@@ -61,7 +61,7 @@ class EFileUploadAction extends CAction
 	 * @var boolean whether terminate application after file will save. It often need for ajax request.
 	 * Defaults to false.
 	 */
-	public $exitOnAjax=false;
+	public $exitAfterSave=false;
 	/**
 	 * @var CUploadedFile|null the uploaded file.
 	 */
@@ -135,7 +135,7 @@ class EFileUploadAction extends CAction
 				$this->afterSave();
 				Yii::trace(Yii::t('yiiext',"File success saved."));
 
-				if($this->exitOnAjax && Yii::app()->getRequest()->getIsAjaxRequest())
+				if($this->exitAfterSave)
 					exit;
 			}
 		}
