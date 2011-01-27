@@ -4,7 +4,7 @@ EFileUploadAction
 File upload action.
 
 Usage
--------------
+-----
 ~~~
 [php]
 // add action to controller
