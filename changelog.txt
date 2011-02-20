@@ -1,3 +1,9 @@
+0.2
+Warning: this version is not backwards compatible to 0.1.
+---
+[*] Add setter and getter to path and filename. Now you can change it from beforeSave event. (Veaceslav Medvedev)
+[-] Delete property exitOnAjax. You can stop appliaction via event. (Veaceslav Medvedev)
+
 0.1
 ---
-- Initial public release (Veaceslav Medvedev)
+[+] Initial public release (Veaceslav Medvedev)

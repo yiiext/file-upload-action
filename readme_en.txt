@@ -20,8 +20,6 @@ public function actions()
 			'attribute'=null,
 			// the input field name. This must be resolve from model and attribute.
 			'name'='upload-file',
-			// the directory where save files. Path must be relative from webroot.
-			'path'=>'',
 			// try create directory if not exists. Defaults to false.
 			'createDirectory'=false,
 			// which means the widest possible access.
@@ -33,8 +31,24 @@ public function actions()
 			'filenameRule'=null,
 			// the filename. If not set will be copied original filename.
 			'filename'=null,
-			// whether terminate application after file will save. It often need for ajax request.
-			'exitAfterSave'=>false,
+			// the directory where save files. Path must be relative from webroot.
+			'path'=>null,
+			// the before save event
+			'onBeforeSave'=>function($event)
+			{
+				// change path via event
+				$event->sender->path=Yii::getPathOfAlias('webroot').'/files';
+				// change filename
+				$event->sender->filename='file'.date('YmdHis').'.'.$event->sender->file->getExtensionName();
+			},
+			// the after save event
+			'onAfterSave'=>function($event)
+			{
+				// return file url
+				echo str_replace(Yii::getPathOfAlias('webroot'),'',$event->sender->path).'/'.$event->sender->filename;
+				// exit for ajax requst
+				exit;
+			}
 		),
 		// ...
 	);

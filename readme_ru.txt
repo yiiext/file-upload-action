@@ -21,8 +21,6 @@ public function actions()
 			'attribute'=null,
 			// имя input-поля на странице в который будет загружен файл
 			'name'='upload-file',
-			// путь сохранения файла, относительно webroot
-			'path'=>'',
 			// указывает будет ли скрипт пытаться создать папку загрузки, при ее отсутствии
 			'createDirectory'=false,
 			// права доступа к создаваемой папке
@@ -34,9 +32,24 @@ public function actions()
 			'filenameRule'=null,
 			// Имя файла, если не указывать, будет использовано оригинальное
 			'filename'=null,
-			// указывает нужно ли завершить выполнение скрипта после сохранения файла
-			// часто необходим при AJAX-загрузке файлов
-			'exitAfterSave'=>false,
+			// путь сохранения файла, относительно webroot
+			'path'=>null,
+			// before save событие
+			'onBeforeSave'=>function($event)
+			{
+				// подменяем путь для сохранения
+				$event->sender->path=Yii::getPathOfAlias('webroot').'/files';
+				// меняем имя файла
+				$event->sender->filename='file'.date('YmdHis').'.'.$event->sender->file->getExtensionName();
+			},
+			// after save событие
+			'onAfterSave'=>function($event)
+			{
+				// вернем ссылку на файл
+				echo str_replace(Yii::getPathOfAlias('webroot'),'',$event->sender->path).'/'.$event->sender->filename;
+				// останвоим приложение для ajax'а
+				exit;
+			}
 		),
 		// ...
 	);
