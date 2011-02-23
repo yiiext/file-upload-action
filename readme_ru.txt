@@ -34,20 +34,31 @@ public function actions()
 			'filename'=null,
 			// путь сохранения файла, относительно webroot
 			'path'=>null,
-			// before save событие
+			'onBeforeUpload'=>function($event)
+			{
+				// меняем путь установленный по умолчанию
+				$event->sender->path=Yii::getPathOfAlias('webroot').'/files';
+			},
 			'onBeforeSave'=>function($event)
 			{
-				// подменяем путь для сохранения
-				$event->sender->path=Yii::getPathOfAlias('webroot').'/files';
-				// меняем имя файла
-				$event->sender->filename='file'.date('YmdHis').'.'.$event->sender->file->getExtensionName();
+				// Можем добавить ошибку и отменить сохранение
+				$event->sender->addError(Yii::t('yiiext','Сохранение отменено!'));
+				$event->isValid=false;
 			},
-			// after save событие
 			'onAfterSave'=>function($event)
 			{
-				// вернем ссылку на файл
-				echo str_replace(Yii::getPathOfAlias('webroot'),'',$event->sender->path).'/'.$event->sender->filename;
-				// останвоим приложение для ajax'а
+				// например, создаем превьюшку для картинки.
+			}
+			'onAfterUpload'=>function($event)
+			{
+				if($event->sender->hasErrors())
+					// если есть ошибки покажим их
+					echo implode(', ',$event->sender->getErrors());
+				else
+					// вернем ссылку на файл
+					echo str_replace(Yii::getPathOfAlias('webroot'),'',$event->sender->path).'/'.$event->sender->filename;
+
+				// остановим приложение для ajax'а
 				exit;
 			}
 		),
@@ -55,3 +66,12 @@ public function actions()
 	);
 }
 ~~~
+
+События
+-------------
+Действие имеет 4 события и выполняются в следующем порядке: onBeforeUpload, onBeforeSave, onAfterSave, onAfterUpload.
+* onBeforeUpload - это событие, в основном предназначено для изменения стандартных настрооек действия: путь сохранения, имя файла и др.
+* onBeforeSave - предназначено для более детальной валидации загруженного файла, то что нельзя сделать средствами модели.
+  В этом событии можно отменить сохранение файла, установив $event->isValid=false
+* onAfterSave - событие предназначенное для манипуляции с уже сохраненым файлом.
+* onAfterUpload - в этом событии предлагается проверять загрузился, сохранился и нет. И показать ошибки.

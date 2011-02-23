@@ -10,7 +10,7 @@
  * EFileUploadAction file upload action.
  *
  * @author Veaceslav Medvedev <slavcopost@gmail.com>
- * @version 0.2
+ * @version 0.3
  * @package yiiext.actions.fileUpload
  */
 class EFileUploadAction extends CAction
@@ -29,6 +29,11 @@ class EFileUploadAction extends CAction
 	 */
 	public $name;
 	/**
+	 * @var string the directory where save files.
+	 * Defaults to webroot directory.
+	 */
+	public $path;
+	/**
 	 * @var boolean try create directory if not exists. Defaults to false.
 	 * @see http://php.net/manual/en/function.mkdir.php
 	 */
@@ -44,6 +49,12 @@ class EFileUploadAction extends CAction
 	 */
 	public $createDirectoryRecursive=false;
 	/**
+	 * @var string the filename.
+	 * Defaults to original filename.
+	 * @link CUploadedFile::getName()
+	 */
+	public $filename;
+	/**
 	 * @var string the rule for generate filename.
 	 */
 	public $filenameRule;
@@ -51,76 +62,8 @@ class EFileUploadAction extends CAction
 	 * @var CUploadedFile|null the uploaded file.
 	 */
 	protected $_file;
-	/**
-	 * @var string the directory where save files.
-	 * Defaults to webroot directory.
-	 */
-	protected $_path;
-	/**
-	 * @var string the filename.
-	 * Defaults to original filename.
-	 * @link CUploadedFile::getName()
-	 */
-	protected $_filename;
+	protected $_errors=array();
 
-	/**
-	* The directory where save files. Defaults to webroot directory.
-	* @return string the directory path.
-	*/
-	public function getPath()
-	{
-		if($this->_path===null)
-			return Yii::getPathOfAlias('webroot');
-		
-		if(!is_dir($this->_path))
-		{
-			if($this->createDirectory===true)
-			{
-				if(!mkdir($this->_path,$this->createDirectoryMode,$this->createDirectoryRecursive))
-					throw new CException(Yii::t('yiiext','Cannot create directory "{dir}".',array('{dir}'=>$this->_path)));
-				Yii::trace('Create directory "{dir}"',array('{dir}'=>$this->_path));
-			}
-			else
-				throw new CException(Yii::t('yiiext','Invalid path "{path}".',array('{path}'=>$this->_path)));
-		}
-		return $this->_path;
-	}
-	/**
-	* Setup the directory where save files.
-	* @param string $path
-	*/
-	public function setPath($path)
-	{
-		$this->_path=$path;
-	}
-	/**
-	* The filename. May be fixed name or expression.
-	* Defaults to original filename.
-	* @return string the filename.
-	* @link self::filenameRule
-	* @link CUploadedFile::getName()
-	*/
-	public function getFilename()
-	{
-		if($this->_filename===null)
-		{
-			// If set filename rule, evaluate it.
-			if($this->filenameRule!==null)
-				$this->_filename=$this->evaluateExpression($this->filenameRule,array('file'=>$this->getFile()));
-			// If filename not set, get the original uploaded filename.
-			if($this->_filename===null)
-				$this->_filename=$this->getFile()->getName();
-		}
-		return $this->_filename;
-	}
-	/**
-	* Setup fixed name to file.
-	* @param string $filename
-	*/
-	public function setFilename($filename)
-	{
-		$this->_filename=$filename;
-	}
 	/**
 	 * @return CUploadedFile|null the uploaded file.
 	 */
@@ -129,20 +72,58 @@ class EFileUploadAction extends CAction
 		return $this->_file;
 	}
 	/**
-	 * @throws CException
-	 * @return void
+	 * Returns a value indicating whether there is any error.
+	 * @return boolean whether there is any error.
 	 */
+	public function hasErrors()
+	{
+		return $this->_errors!==array();
+	}
+	/**
+	 * Returns the process errors.
+	 * @return array errors. Empty array is returned if no error.
+	 */
+	public function getErrors()
+	{
+		return $this->_errors;
+	}
+	/**
+	 * Adds a new error.
+	 * @param string $error new error message.
+	 */
+	public function addError($error)
+	{
+		$this->_errors[]=strval($error);
+	}
 	public function run()
 	{
 		// If model set, check attribute and generate input filed name.
 		if(is_string($this->model))
+		{
 			$this->model=new $this->model;
+		}
 		if($this->hasModel())
+		{
 			$this->name=CHtml::activeName($this->model,$this->attribute);
+		}
 		// Check input field name.
 		if(empty($this->name))
+		{
 			throw new CException(Yii::t('yiiext','Input field name required.'));
-
+		}
+		// Upload files.
+		$this->upload();
+		// Show errors.
+		if($this->hasErrors())
+			throw new CException(implode("\n",$this->getErrors()));
+	}
+	/**
+	 * @throws CException
+	 * @return void
+	 */
+	protected function upload()
+	{
+		$this->beforeUpload();
 		// Check file exists.
 		if(($this->_file=CUploadedFile::getInstanceByName($this->name))!==null)
 		{
@@ -151,21 +132,65 @@ class EFileUploadAction extends CAction
 			{
 				$this->model->{$this->attribute}=$this->_file;
 				if(!$this->model->validate())
-					throw new CException(Yii::t('yiiext',$this->model->getError($this->attribute)));
+				{
+					$this->addError($this->model->getError($this->attribute));
+					return;
+				}
+			}
+
+			// Prepare directory.
+			if($this->path===null)
+			{
+				$this->path=Yii::getPathOfAlias('webroot');
+			}
+			else if(!is_dir($this->path))
+			{
+				if($this->createDirectory===true)
+				{
+					if(!mkdir($this->path,$this->createDirectoryMode,$this->createDirectoryRecursive))
+					{
+						$this->addError(Yii::t('yiiext','Cannot create directory "{dir}".',array('{dir}'=>$this->path)));
+						return;
+					}
+					Yii::trace('Create directory "{dir}"',array('{dir}'=>$this->path));
+				}
+				else
+				{
+					$this->addError(Yii::t('yiiext','Invalid path "{path}".',array('{path}'=>$this->path)));
+					return;
+				}
+			}
+
+			if($this->filename===null)
+			{
+				// If set filename rule, evaluate it.
+				if($this->filenameRule!==null)
+					$this->filename=$this->evaluateExpression($this->filenameRule,array('file'=>$this->getFile()));
+				// If filename not set, get the original uploaded filename.
+				if($this->filename===null)
+					$this->filename=$this->getFile()->getName();
 			}
 
 			// Run beforeSave events.
-			$this->beforeSave();
-			// Save file.
-			$filepath=rtrim($this->getPath(),'/').'/'.$this->getFilename();
-			if(!$this->_file->saveAs($filepath))
-				throw new CException(Yii::t('yiiext','Cannot save file "{filepath}".',array('{filepath}'=>$filepath)));
-			Yii::trace(Yii::t('yiiext','File "{filepath}" success saved.',array('{filepath}'=>$filepath)));
-			// Run afterSave events.
-			$this->afterSave();
+			if($this->beforeSave())
+			{
+				// Save file.
+				$filepath=rtrim($this->path,'/').'/'.$this->filename;
+				if(!$this->_file->saveAs($filepath))
+				{
+					$this->addError(Yii::t('yiiext','Cannot save file "{filepath}".',array('{filepath}'=>$filepath)));
+					return;
+				}
+				Yii::trace(Yii::t('yiiext','File "{filepath}" success saved.',array('{filepath}'=>$filepath)));
+				// Run afterSave events.
+				$this->afterSave();
+			}
+			$this->afterUpload();
 		}
 		else
-			throw new CException(Yii::t('yiiext','File not sent.'));
+		{
+			$this->addError(Yii::t('yiiext','File not sent.'));
+		}
 	}
 	/**
 	 * @return boolean whether this action is associated with a data model.
@@ -176,7 +201,7 @@ class EFileUploadAction extends CAction
 	}
 	/**
 	 * @param CEvent $event
-	 * @return boolean
+	 * @return void
 	 */
 	public function onBeforeSave($event)
 	{
@@ -191,12 +216,34 @@ class EFileUploadAction extends CAction
 		$this->raiseEvent('onAfterSave',$event);
 	}
 	/**
+	 * @param CEvent $event
 	 * @return void
+	 */
+	public function onBeforeUpload($event)
+	{
+		$this->raiseEvent('onBeforeUpload',$event);
+	}
+	/**
+	 * @param CEvent $event
+	 * @return void
+	 */
+	public function onAfterUpload($event)
+	{
+		$this->raiseEvent('onAfterUpload',$event);
+	}
+	/**
+	 * @return boolean
 	 */
 	protected function beforeSave()
 	{
 		if($this->hasEventHandler('onBeforeSave'))
-			$this->onBeforeSave(new CEvent($this));
+		{
+			$event=new CModelEvent($this);
+			$this->onBeforeSave($event);
+			return $event->isValid;
+		}
+		else
+			return true;
 	}
 	/**
 	 * @return void
@@ -205,5 +252,21 @@ class EFileUploadAction extends CAction
 	{
 		if($this->hasEventHandler('onAfterSave'))
 			$this->onAfterSave(new CEvent($this));
+	}
+	/**
+	 * @return void
+	 */
+	protected function beforeUpload()
+	{
+		if($this->hasEventHandler('onBeforeUpload'))
+			$this->onBeforeUpload(new CEvent($this));
+	}
+	/**
+	 * @return void
+	 */
+	protected function afterUpload()
+	{
+		if($this->hasEventHandler('onAfterUpload'))
+			$this->onAfterUpload(new CEvent($this));
 	}
 }
