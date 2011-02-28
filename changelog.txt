@@ -1,6 +1,7 @@
 0.3
 [+] Add getErrors(), hasErrors(), addError() method. (Veaceslav Medvedev)
 [+] Add onBeforeUpload and onAfterUpload event. Details in readme.txt (Veaceslav Medvedev)
+[*] Event onBeforeSave can cancel process and file do not be save. (Veaceslav Medvedev)
 [-] Remove setter and getter to path and filename. (Veaceslav Medvedev)
 
 0.2
