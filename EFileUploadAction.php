@@ -133,7 +133,9 @@ class EFileUploadAction extends CAction
 				$this->model->{$this->attribute}=$this->_file;
 				if(!$this->model->validate())
 				{
-					$this->addError($this->model->getError($this->attribute));
+					array_walk_recursive($this->model->getErrors(), function($error,$k,$action){
+						$action->addError($error);
+					},$this);
 					return;
 				}
 			}
