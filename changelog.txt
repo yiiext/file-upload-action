@@ -1,3 +1,7 @@
+0.4
+[*] When Model validation fail, all errors are added via addError(). (Gerónimo Oñativia)
+[*] Event onAfterUpload can end the request with custom output without reaching an Exception. (Gerónimo Oñativia)
+
 0.3
 [+] Add getErrors(), hasErrors(), addError() method. (Veaceslav Medvedev)
 [+] Add onBeforeUpload and onAfterUpload event. Details in readme.txt (Veaceslav Medvedev)

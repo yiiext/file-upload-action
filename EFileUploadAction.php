@@ -134,7 +134,6 @@ class EFileUploadAction extends CAction
 				if(!$this->model->validate())
 				{
 					array_walk_recursive($this->model->getErrors(), array($this,'addError'));
-					return;
 				}
 			}
 
@@ -150,14 +149,12 @@ class EFileUploadAction extends CAction
 					if(!mkdir($this->path,$this->createDirectoryMode,$this->createDirectoryRecursive))
 					{
 						$this->addError(Yii::t('yiiext','Cannot create directory "{dir}".',array('{dir}'=>$this->path)));
-						return;
 					}
 					Yii::trace('Create directory "{dir}"',array('{dir}'=>$this->path));
 				}
 				else
 				{
 					$this->addError(Yii::t('yiiext','Invalid path "{path}".',array('{path}'=>$this->path)));
-					return;
 				}
 			}
 
@@ -172,18 +169,20 @@ class EFileUploadAction extends CAction
 			}
 
 			// Run beforeSave events.
-			if($this->beforeSave())
+			if(!$this->hasErrors() && $this->beforeSave())
 			{
 				// Save file.
 				$filepath=rtrim($this->path,'/').'/'.$this->filename;
 				if(!$this->_file->saveAs($filepath))
 				{
 					$this->addError(Yii::t('yiiext','Cannot save file "{filepath}".',array('{filepath}'=>$filepath)));
-					return;
 				}
-				Yii::trace(Yii::t('yiiext','File "{filepath}" success saved.',array('{filepath}'=>$filepath)));
-				// Run afterSave events.
-				$this->afterSave();
+				else
+				{
+					Yii::trace(Yii::t('yiiext','File "{filepath}" success saved.',array('{filepath}'=>$filepath)));
+					// Run afterSave events.
+					$this->afterSave();
+				}
 			}
 			$this->afterUpload();
 		}
