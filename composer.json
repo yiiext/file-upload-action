@@ -1,0 +1,12 @@
+{
+    "name": "yiiext/file-upload-action",
+    "description": "File upload action",
+    "minimum-stability": "stable",
+    "license": "BSD",
+    "authors": [
+        {
+            "name": "slavcodev (Veaceslav Medvedev)",
+            "email": "slavcopost@gmail.com"
+        }
+    ]
+}
