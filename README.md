@@ -1,12 +1,9 @@
-EFileUploadAction
-===============
+File upload action
+==================
 
-File upload action.
+## Usage
 
-Usage
------
-~~~
-[php]
+```php
 // add action to controller
 public function actions()
 {
@@ -64,13 +61,14 @@ public function actions()
 		// ...
 	);
 }
-~~~
+```
 
-Events
--------------
-Action has 4 events and runs in the following order: onBeforeUpload, onBeforeSave, onAfterSave, onAfterUpload.
-* OnBeforeUpload - this event is mainly intended to change the default settings for the action: save path, file name, etc.
-* OnBeforeSave - intended for a more detailed validation of the downloaded file, what can be done by means of the model.
+## Events
+
+Action has 4 events and runs in the following order:
+
+* **onBeforeUpload** - this event is mainly intended to change the default settings for the action: save path, file name, etc.
+* **onBeforeSave** - intended for a more detailed validation of the downloaded file, what can be done by means of the model.
   This event can be canceled to save the file by setting the $ event->isValid=false
-* OnAfterSave - an event designed to manipulate already saved file.
-* OnAfterUpload - in this event are invited to check the load, save or no. And show the error.
+* **onAfterSave** - an event designed to manipulate already saved file.
+* **onAfterUpload** - in this event are invited to check the load, save or no. And show the error.
